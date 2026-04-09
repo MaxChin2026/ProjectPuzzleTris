@@ -1,0 +1,216 @@
+{
+  "main": {
+    "id": "a6f94c5dfb07dae4",
+    "type": "split",
+    "children": [
+      {
+        "id": "22e5ae703cec2af8",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "38a97e804ab12397",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "00-ELEMENTRIS-总索引.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "00-ELEMENTRIS-总索引"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "21c60f7ca1beb4bd",
+    "type": "split",
+    "children": [
+      {
+        "id": "47ad8b413c8eeba5",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "835fc521fb536d08",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "文件列表"
+            }
+          },
+          {
+            "id": "1e76947d35184a0c",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "搜索"
+            }
+          },
+          {
+            "id": "a1f83c0c034fb63d",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "书签"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "8ad8f5d89be9e03e",
+    "type": "split",
+    "children": [
+      {
+        "id": "a467c7fc39e9348e",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "7a4bbcd0bd501e8e",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "修订记录-v0.5.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "修订记录-v0.5 的反向链接列表"
+            }
+          },
+          {
+            "id": "6ec03e3f47e5cdf7",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "修订记录-v0.5.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "修订记录-v0.5 的出链列表"
+            }
+          },
+          {
+            "id": "5a40e7c6ae9030ac",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "标签"
+            }
+          },
+          {
+            "id": "b5879d62dae7d3fb",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "添加笔记属性"
+            }
+          },
+          {
+            "id": "540bb2e6ccd84017",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "修订记录-v0.5.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "修订记录-v0.5 的大纲"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false,
+      "bases:新建数据库": false
+    }
+  },
+  "active": "38a97e804ab12397",
+  "lastOpenFiles": [
+    "修订记录-v0.7.md",
+    "修订记录-v0.5.md",
+    "修订记录-v0.6.md",
+    "CONFIG-干扰方块配置表.md",
+    "CONFIG-关卡配置表.md",
+    "CONFIG-奖励效果配置表.md",
+    "修订记录-v0.4.md",
+    "修订记录-v0.3.md",
+    "08-英雄与构筑系统.md",
+    "修订记录-v0.2.md",
+    "CONFIG-敌人配置表.md",
+    "设计概念修改2.md",
+    "初始设计概念.md",
+    "07-版本规划.md",
+    "06-技术架构.md",
+    "05-界面设计.md",
+    "04-压力与奖励曲线.md",
+    "03-塔防战斗系统.md",
+    "02-游戏机制.md",
+    "01-核心概述.md",
+    "00-ELEMENTRIS-总索引.md",
+    "CONFIG-敌人配置表-DEPRECATED.md",
+    "03-干扰方块与预警系统.md",
+    "设计概念修改.md",
+    "03-英雄与RPG系统.md",
+    "CONFIG-英雄配置表.md",
+    "新建 文本文档.txt"
+  ]
+}
