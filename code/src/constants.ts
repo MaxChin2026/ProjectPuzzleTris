@@ -6,6 +6,7 @@ export const COLS = 10;
 export const ROWS = 20;
 export const CELL_SIZE = 28;          // pixels per grid cell
 export const PATH_WIDTH = 30;         // enemy path lane width px
+export const SKILL_PANEL_W = 52;      // skill panel width (right side)
 
 // Board layout
 export const BOARD_LEFT = PATH_WIDTH; // board x offset (path on left)
@@ -40,9 +41,6 @@ export const ELEMENT_COLORS: Record<ElementType, string> = {
   hurricane: '#44ff88',
 };
 export const SKILL_ENERGY_PER_CHARGE = 20; // cells of that color per charge
-
-// Skill panel width (appended to the right of the right path)
-export const SKILL_PANEL_W = 52;
 
 // Colors
 export const COLOR_EMPTY      = '#1a1a2e';
