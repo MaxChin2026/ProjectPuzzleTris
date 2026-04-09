@@ -230,6 +230,7 @@ export class GameController {
       enemies: this.enemies.enemies,
       onEnemyDamage: this._onEnemyDamage.bind(this),
       onEnemyPositionSet: (enemy, p) => { enemy.pathProgress = Math.max(0, p); },
+      getPathPos: this.enemies.getPathPos.bind(this.enemies),
     };
     return this.skills.useSkill(el, ctx);
   }

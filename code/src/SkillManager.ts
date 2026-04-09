@@ -13,6 +13,7 @@ export interface SkillContext {
   enemies: Enemy[];
   onEnemyDamage: (enemy: Enemy, dmg: number) => void;
   onEnemyPositionSet: (enemy: Enemy, progress: number) => void;
+  getPathPos: (progress: number) => { x: number; y: number };
 }
 
 export interface ElementSkill {
@@ -82,19 +83,21 @@ export class SkillManager {
 
     switch (el) {
       case 'fire': {
-        // 火焰：对所有敌人施加火焰DoT（区域持续伤害）
+        // 火焰：对所有敌人施加强力火焰DoT（30伤害/秒，持续5秒 = 150总伤害）
         for (const e of ctx.enemies) {
-          e.statusEffects.push({ type: StatusEffectType.FIRE, remaining: 8, value: BASE_DAMAGE * 0.5 });
+          const existing = e.statusEffects.findIndex(fx => fx.type === StatusEffectType.FIRE);
+          const newFx = { type: StatusEffectType.FIRE, remaining: 5, value: BASE_DAMAGE * 3 };
+          if (existing >= 0) e.statusEffects[existing] = newFx;
+          else e.statusEffects.push(newFx);
         }
         break;
       }
       case 'lightning': {
-        // 闪电：链击最多5个最靠近终点的敌人
+        // 闪电：链击最多5个最靠近终点的敌人（80/60/40/20/10 伤害）
         const targets = sorted().slice(0, 5);
-        let mult = 1.2;
-        for (const e of targets) {
-          ctx.onEnemyDamage(e, BASE_DAMAGE * mult);
-          mult = Math.max(0.4, mult - 0.2);
+        const mults = [8, 6, 4, 2, 1];
+        for (let i = 0; i < targets.length; i++) {
+          ctx.onEnemyDamage(targets[i], BASE_DAMAGE * mults[i]);
         }
         break;
       }
@@ -102,18 +105,29 @@ export class SkillManager {
         // 冰霜：冻结所有敌人（免疫冻结的改为减速）
         for (const e of ctx.enemies) {
           if (!e.immuneToFreeze) {
-            e.statusEffects.push({ type: StatusEffectType.FREEZE, remaining: 3 });
+            const existing = e.statusEffects.findIndex(fx => fx.type === StatusEffectType.FREEZE);
+            const newFx = { type: StatusEffectType.FREEZE, remaining: 4 };
+            if (existing >= 0) e.statusEffects[existing] = newFx;
+            else e.statusEffects.push(newFx);
           } else {
-            e.statusEffects.push({ type: StatusEffectType.SLOW, remaining: 5, value: 0.6 });
+            const existing = e.statusEffects.findIndex(fx => fx.type === StatusEffectType.SLOW);
+            const newFx = { type: StatusEffectType.SLOW, remaining: 6, value: 0.7 };
+            if (existing >= 0) e.statusEffects[existing] = newFx;
+            else e.statusEffects.push(newFx);
           }
         }
         break;
       }
       case 'hurricane': {
-        // 飓风：击退最靠近终点的3个敌人（减少路径进度）
+        // 飓风：击退最靠近终点的3个敌人50%路径，并立即更新视觉位置
         const top = sorted().slice(0, 3);
         for (const e of top) {
-          ctx.onEnemyPositionSet(e, Math.max(0, e.pathProgress - 0.25));
+          const newProgress = Math.max(0, e.pathProgress - 0.5);
+          ctx.onEnemyPositionSet(e, newProgress);
+          // Immediately update visual position so the knockback is instant
+          const pos = ctx.getPathPos(newProgress);
+          e.x = pos.x;
+          e.y = pos.y;
         }
         break;
       }

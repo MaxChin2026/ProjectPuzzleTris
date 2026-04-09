@@ -102,6 +102,11 @@ export class EnemyManager {
     this._onLeak = onLeak;
   }
 
+  /** Expose path position calculation for use by skills */
+  getPathPos(progress: number): { x: number; y: number } {
+    return getPathPosition(progress);
+  }
+
   spawnEnemy(type: EnemyType = EnemyType.NORMAL): void {
     this.enemies.push(createEnemy(type));
   }
