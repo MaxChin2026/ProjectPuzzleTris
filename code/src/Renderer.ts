@@ -608,25 +608,26 @@ export class Renderer {
   private _drawDpad(): void {
     const ctx = this._ctx;
     const dirs = ['left', 'right', 'up', 'down'] as const;
-    const labels: Record<string, string> = { left: '\u25c4', right: '\u25ba', up: '\u25b2', down: '\u25bc' };
+    const labels: Record<string, string> = { left: '\u25c4', right: '\u25ba', up: '\u25bc\u25bc', down: '\u25bc' };
 
     for (const dir of dirs) {
       const r = getDpadBtnRect(dir);
       const cx = r.x + r.w / 2;
       const cy = r.y + r.h / 2;
 
-      // Button background
-      ctx.fillStyle = 'rgba(60,60,90,0.85)';
+      // Button background — hard-drop (up) gets a distinct accent color
+      const isHardDrop = dir === 'up';
+      ctx.fillStyle = isHardDrop ? 'rgba(180,60,60,0.85)' : 'rgba(60,60,90,0.85)';
       ctx.beginPath();
       ctx.roundRect(r.x, r.y, r.w, r.h, 8);
       ctx.fill();
-      ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+      ctx.strokeStyle = isHardDrop ? 'rgba(255,120,120,0.6)' : 'rgba(255,255,255,0.25)';
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
       // Arrow label
-      ctx.fillStyle = '#ddd';
-      ctx.font = 'bold 16px monospace';
+      ctx.fillStyle = isHardDrop ? '#ffcccc' : '#ddd';
+      ctx.font = isHardDrop ? 'bold 12px monospace' : 'bold 16px monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(labels[dir], cx, cy);
