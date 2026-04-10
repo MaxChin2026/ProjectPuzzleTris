@@ -1,5 +1,5 @@
-// ============================================================
-// ELEMENTRIS �� Renderer
+﻿// ============================================================
+// ELEMENTRIS - Renderer
 // Canvas 2D rendering for all game layers
 // ============================================================
 
@@ -132,15 +132,15 @@ export class Renderer {
     ctx.save();
     ctx.translate(BOARD_LEFT / 2, BOARD_TOP + boardH / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText('����������', -50, 0);
+    ctx.fillText('▲▲▲▲▲', -50, 0);
     ctx.restore();
 
-    ctx.fillText('? ? ? ? ?', BOARD_LEFT + 10, BOARD_TOP - PATH_WIDTH / 2 + 6);
+    ctx.fillText('► ► ► ► ►', BOARD_LEFT + 10, BOARD_TOP - PATH_WIDTH / 2 + 6);
 
     ctx.save();
     ctx.translate(BOARD_LEFT + boardW + PATH_WIDTH / 2, BOARD_TOP + boardH / 2);
     ctx.rotate(Math.PI / 2);
-    ctx.fillText('����������', -50, 0);
+    ctx.fillText('▲▲▲▲▲', -50, 0);
     ctx.restore();
 
     ctx.fillStyle = 'rgba(0,255,120,0.5)';
@@ -541,7 +541,7 @@ export class Renderer {
   private _drawDpad(): void {
     const ctx = this._ctx;
     const dirs = ['left', 'right', 'up', 'down'] as const;
-    const labels: Record<string, string> = { left: '?', right: '?', up: '��', down: '��' };
+    const labels: Record<string, string> = { left: '\u25c4', right: '\u25ba', up: '\u25b2', down: '\u25bc' };
 
     for (const dir of dirs) {
       const r = getDpadBtnRect(dir);

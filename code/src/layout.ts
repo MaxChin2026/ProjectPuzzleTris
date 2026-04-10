@@ -1,5 +1,5 @@
-// ============================================================
-// ELEMENTRIS ¡ª Layout utilities (no dependency on game modules)
+ï»¿// ============================================================
+// ELEMENTRIS -  utilities (no dependency on game modules)
 // ============================================================
 
 import {

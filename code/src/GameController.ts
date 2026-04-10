@@ -1,5 +1,5 @@
-// ============================================================
-// ELEMENTRIS �� GameController
+﻿// ============================================================
+// ELEMENTRIS - GameController
 // Central state machine, update loop, event coordination.
 // Tetris-style gravity: one block falls from the top at a time.
 // Hero XP from line clears -> hero levels up -> LEVEL_UP state.
@@ -415,3 +415,4 @@ export class GameController {
     this.onStateChange?.(this.state);
   }
 }
+

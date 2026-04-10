@@ -1,5 +1,5 @@
-// ============================================================
-// ELEMENTRIS �� SkillManager
+﻿// ============================================================
+// ELEMENTRIS - 
 // Manages 4 element energy pools: fire / lightning / frost / hurricane.
 // Energy accumulates by clearing cells of the matching element color.
 // Greatly enhanced visual effects for all skills.

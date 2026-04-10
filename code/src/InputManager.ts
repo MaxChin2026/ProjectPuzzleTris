@@ -1,5 +1,5 @@
-// ============================================================
-// ELEMENTRIS ¡ª InputManager
+ï»¿// ============================================================
+// ELEMENTRIS - 
 // Virtual D-pad (left/right/up=hard-drop/down=soft-drop) on bottom-left.
 // Rotate button on bottom-right.
 // Touch-and-hold DAS for left/right/down.
