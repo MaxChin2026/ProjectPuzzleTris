@@ -34,7 +34,7 @@ export const HERO_XP_TABLE: Record<number, number> = {
 // Timing
 // Wave-based enemy spawning
 export const WAVE_SIZE_BASE        = 5;    // enemies in wave 1
-export const INTRA_WAVE_DELAY_MS   = 500;  // delay between enemies within a wave (ms) — tight formation
+export const INTRA_WAVE_DELAY_MS   = 700;  // ms between enemy spawns — tight 25px spacing
 export const INTER_WAVE_DELAY_MS   = 10000; // delay between waves (ms) — longer reaction window
 
 // Combat

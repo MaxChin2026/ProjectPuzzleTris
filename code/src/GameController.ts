@@ -79,12 +79,14 @@ export class GameController {
   bullets: BulletSystem;
   skills: SkillManager;
 
-  private _enemySpawnTimer: number = 0;
   private _lastTime: number = 0;
   private _raf: number = 0;
 
-  private _waveEnemiesLeft: number = 0;
-  private _betweenWave: boolean = true;
+  // Wave state machine: between → notify → spawning → active
+  private _wavePhase: 'between' | 'notify' | 'spawning' | 'active' = 'between';
+  private _waveTimer: number = 0;          // seconds elapsed in current phase
+  private _waveSpawnQueue: number = 0;     // enemies remaining to spawn this wave
+  private _waveSpawnTimer: number = 0;     // seconds since last intra-wave spawn
 
   bulletDmgMult: number = 1;
   critBonus: number = 0;
@@ -104,7 +106,6 @@ export class GameController {
     if (this.state !== GameState.IDLE) return;
     this._resetAll();
     this.state = GameState.PLAYING;
-    this.enemies.spawnEnemy(EnemyType.NORMAL);
     this._lastTime = performance.now();
     this._raf = requestAnimationFrame(this._loop.bind(this));
     this.onStateChange?.(this.state);
@@ -149,9 +150,10 @@ export class GameController {
     this.enemies.reset();
     this.bullets.reset();
     this.skills.reset();
-    this._enemySpawnTimer = 0;
-    this._waveEnemiesLeft = 0;
-    this._betweenWave = true;
+    this._wavePhase = 'between';
+    this._waveTimer = 0;
+    this._waveSpawnQueue = 0;
+    this._waveSpawnTimer = 0;
     this._fallTimer = 0;
     this._fallInterval = FALL_START_INTERVAL_MS;
     this._softDrop = false;
@@ -223,22 +225,62 @@ export class GameController {
   }
 
   private _tickWaveSpawn(dt: number): void {
-    this._enemySpawnTimer += dt * 1000;
-    if (this._betweenWave) {
-      const interDelay = Math.max(5000, INTER_WAVE_DELAY_MS - (this.wave - 1) * 200);
-      if (this._enemySpawnTimer >= interDelay) {
-        this._enemySpawnTimer = 0;
-        this._betweenWave = false;
-        const waveNum = this.wave;
-        this.wave++;
-        const count = Math.min(12, WAVE_SIZE_BASE + Math.floor((waveNum - 1) / 2));
-        // Spawn all enemies of this wave at once (compact, tight formation)
-        for (let i = 0; i < count; i++) {
-          this._spawnNextEnemy();
+    this._waveTimer += dt;
+
+    switch (this._wavePhase) {
+
+      case 'between': {
+        // Wait inter-wave delay (shrinks slightly each wave, min 5s)
+        const interDelay = Math.max(5, INTER_WAVE_DELAY_MS / 1000 - (this.wave - 1) * 0.2);
+        if (this._waveTimer >= interDelay) {
+          this._waveTimer = 0;
+          const waveNum = this.wave;
+          this.wave++;
+          this._waveSpawnQueue = Math.min(14, WAVE_SIZE_BASE + Math.floor((waveNum - 1) / 2));
+          // Show notification BEFORE spawn
+          this.waveNotification = { text: `Wave-${waveNum}`, alpha: 1, timer: 2.5 };
+          this._wavePhase = 'notify';
         }
-        // Wave notification text
-        this.waveNotification = { text: `Wave-${waveNum}`, alpha: 1, timer: 2.2 };
-        this._betweenWave = true; // immediately reset, next wave after inter-delay
+        break;
+      }
+
+      case 'notify': {
+        // Show notification for 1.5s, then begin spawning
+        if (this._waveTimer >= 1.5) {
+          this._waveTimer = 0;
+          this._waveSpawnTimer = 0;
+          this._wavePhase = 'spawning';
+          // Spawn first enemy immediately
+          this._spawnNextEnemy();
+          this._waveSpawnQueue--;
+        }
+        break;
+      }
+
+      case 'spawning': {
+        this._waveSpawnTimer += dt;
+        if (this._waveSpawnQueue <= 0) {
+          // All spawned — wait for wave to be cleared
+          this._wavePhase = 'active';
+          break;
+        }
+        // Tight spawn interval: 700ms gives ~25px gap at normal speed
+        const intraDelay = INTRA_WAVE_DELAY_MS / 1000;
+        if (this._waveSpawnTimer >= intraDelay) {
+          this._waveSpawnTimer = 0;
+          this._spawnNextEnemy();
+          this._waveSpawnQueue--;
+        }
+        break;
+      }
+
+      case 'active': {
+        // Wait until ALL enemies are dead or leaked, then start inter-wave delay
+        if (this.enemies.enemies.length === 0) {
+          this._waveTimer = 0;
+          this._wavePhase = 'between';
+        }
+        break;
       }
     }
   }
