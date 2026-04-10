@@ -44,17 +44,21 @@ export class BulletSystem {
    * Fire bullets for a cleared row set.
    * @param clearedRowIndices  row indices that were cleared simultaneously
    * @param boardCellColors    array of colors for each row's cells (10 colors per row)
+   * @param dmgMult            damage multiplier from passive skills (default 1)
+   * @param extraBullets       extra bullets (additional target selections) per row
    */
   fireBulletsForRows(
     clearedRowIndices: number[],
     boardCellColors: string[][],
+    dmgMult: number = 1,
+    extraBullets: number = 0,
   ): void {
     const rowCount = clearedRowIndices.length;
     if (rowCount === 0) return;
 
     // Determine crit tier (0-indexed: 0=1row, 1=2row, 2=3row, 3=4row)
     const critTier = Math.min(rowCount - 1, 3);
-    const critMult = CRIT_MULTIPLIERS[critTier];
+    const critMult = CRIT_MULTIPLIERS[critTier] * dmgMult;
 
     const bulletColor = CRIT_COLORS[critTier];
     const lineWidth   = CRIT_LINE_WIDTHS[critTier];
@@ -76,12 +80,11 @@ export class BulletSystem {
 
     for (let i = 0; i < clearedRowIndices.length; i++) {
       const rowIdx = clearedRowIndices[i];
-      const rowDamageTotal = 10 * BASE_DAMAGE * critMult; // 10 cells per row
+      const rowDamageTotal = 10 * BASE_DAMAGE * critMult;
 
       const target = this._selectTarget(rowDamageTotal, predictedHp);
       if (!target) continue;
 
-      // Deduct predicted damage so subsequent rows know this enemy will be dead/low
       const after = Math.max(0, (predictedHp.get(target.id) ?? 0) - rowDamageTotal);
       predictedHp.set(target.id, after);
 
@@ -89,25 +92,35 @@ export class BulletSystem {
       for (let col = 0; col < 10; col++) {
         const cellX = BOARD_LEFT + col * CELL_SIZE + CELL_SIZE / 2;
         const cellY = BOARD_TOP + rowIdx * CELL_SIZE + CELL_SIZE / 2;
-
-        // Bezier control point: outside board toward enemy
         const cpX = (cellX + target.x) / 2 + (Math.random() - 0.5) * 60;
         const cpY = Math.min(cellY, target.y) - 80 - Math.random() * 40;
-
-        const bullet: Bullet = {
+        this.bullets.push({
           id: `b${_bidCounter++}`,
-          startX: cellX,
-          startY: cellY,
-          controlX: cpX,
-          controlY: cpY,
+          startX: cellX, startY: cellY,
+          controlX: cpX, controlY: cpY,
           targetEnemy: target,
           damage: BASE_DAMAGE * critMult,
           critMultiplier: critMult,
-          progress: 0,
-          color: bulletColor,
-          lineWidth,
-        };
-        this.bullets.push(bullet);
+          progress: 0, color: bulletColor, lineWidth,
+        });
+      }
+
+      // Extra bullets from multi_bullet passive
+      for (let eb = 0; eb < extraBullets; eb++) {
+        const extraTarget = this._selectTarget(BASE_DAMAGE * critMult, predictedHp) ?? target;
+        const cellX = BOARD_LEFT + 5 * CELL_SIZE + CELL_SIZE / 2;
+        const cellY = BOARD_TOP + rowIdx * CELL_SIZE + CELL_SIZE / 2;
+        const cpX = (cellX + extraTarget.x) / 2 + (Math.random() - 0.5) * 60;
+        const cpY = Math.min(cellY, extraTarget.y) - 80 - Math.random() * 40;
+        this.bullets.push({
+          id: `b${_bidCounter++}`,
+          startX: cellX, startY: cellY,
+          controlX: cpX, controlY: cpY,
+          targetEnemy: extraTarget,
+          damage: BASE_DAMAGE * critMult,
+          critMultiplier: critMult,
+          progress: 0, color: bulletColor, lineWidth,
+        });
       }
     }
 

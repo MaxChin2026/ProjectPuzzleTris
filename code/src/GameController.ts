@@ -1,12 +1,17 @@
 // ============================================================
-// ELEMENTRIS — GameController
-// Central state machine, update loop, event coordination
+// ELEMENTRIS �� GameController
+// Central state machine, update loop, event coordination.
+// Tetris-style gravity: one block falls from the top at a time.
+// Hero XP from line clears -> hero levels up -> LEVEL_UP state.
 // ============================================================
 
-import { GameState, EnemyType, ElementType, Enemy } from './types';
+import { GameState, EnemyType, ElementType, Enemy, PassiveSkillDef, PassiveSkillId } from './types';
 import {
-  COLS, ROWS, BASE_DAMAGE,
+  COLS, ROWS,
   WAVE_SIZE_BASE, INTRA_WAVE_DELAY_MS, INTER_WAVE_DELAY_MS, ELEMENT_TYPES,
+  FALL_START_INTERVAL_MS, SOFT_DROP_INTERVAL_MS,
+  LOCK_DELAY_MS,
+  HERO_BASE_XP, HERO_XP_MULTIPLIER, HERO_XP_TABLE,
 } from './constants';
 import { BoardManager } from './BoardManager';
 import { BlockManager } from './BlockManager';
@@ -14,12 +19,56 @@ import { EnemyManager } from './EnemyManager';
 import { BulletSystem } from './BulletSystem';
 import { SkillManager, SkillContext } from './SkillManager';
 
+// ---- Passive skill library ----------------------------------
+
+const PASSIVE_SKILL_POOL: PassiveSkillDef[] = [
+  { id: 'dmg_up',        name: '����ǿ��',   desc: '�ӵ��˺� +30%',                    element: 'neutral',   icon: '??' },
+  { id: 'fire_dmg',      name: '��������',   desc: '���漼���˺� ��2',                  element: 'fire',      icon: '??' },
+  { id: 'fire_zone_dot', name: '����ս��',   desc: '��������ȼ���˺� +50%',            element: 'fire',      icon: '??' },
+  { id: 'lightning_dmg', name: '�������',   desc: '�������� +2 Ŀ�꣬�˺� ��1.5',      element: 'lightning', icon: '?' },
+  { id: 'chain_bolt',    name: '�ֲ�����',   desc: '�����ÿ��Ŀ���ٴηֲ��˺�',       element: 'lightning', icon: '???' },
+  { id: 'frost_dur',     name: '��������',   desc: '��˪����ʱ�� +3 ��',              element: 'frost',     icon: '??' },
+  { id: 'blizzard',      name: '����ѩ',     desc: '��˪ͬʱ����δ������� 70%',       element: 'frost',     icon: '???' },
+  { id: 'hurricane_kb',  name: 'ǿ��쫷�',   desc: '쫷� +2 Ŀ�꣬���˾��� ��1.5',     element: 'hurricane', icon: '???' },
+  { id: 'cyclone',       name: '��������',   desc: '쫷��·�������е�������˺�',     element: 'hurricane', icon: '??' },
+  { id: 'multi_clear',   name: '��������',   desc: '����ʱ��������һ���ӵ�����',       element: 'neutral',   icon: '??' },
+  { id: 'energy_eff',    name: '��������',   desc: '�����������ļ��� 25%',            element: 'neutral',   icon: '??' },
+  { id: 'hp_regen',      name: '������Ȫ',   desc: 'ÿ����һ�лָ� 1 HP',             element: 'neutral',   icon: '??' },
+  { id: 'wave_slow',     name: 'ʱ��֮��',   desc: '���е����ٶȽ��� 15%',            element: 'neutral',   icon: '?' },
+  { id: 'crit_chance',   name: '��������',   desc: '������ +20%',                    element: 'neutral',   icon: '??' },
+];
+
+function pickSkillOptions(taken: PassiveSkillId[]): PassiveSkillDef[] {
+  const pool = PASSIVE_SKILL_POOL.filter(s => !taken.includes(s.id));
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, 3);
+}
+
+// ---- GameController ------------------------------------------
+
 export class GameController {
   state: GameState = GameState.IDLE;
   playerHp: number = 15;
   maxHp: number = 15;
   score: number = 0;
   wave: number = 1;
+
+  // Hero system
+  heroLevel: number = 1;
+  heroXp: number = 0;
+  heroXpNeeded: number = HERO_BASE_XP;
+  passiveSkills: PassiveSkillId[] = [];
+  levelUpOptions: PassiveSkillDef[] = [];
+
+  // Tetris gravity
+  private _fallTimer: number = 0;
+  private _fallInterval: number = FALL_START_INTERVAL_MS;
+  private _softDrop: boolean = false;
+  private _lockTimer: number = 0;
+  private _lockActive: boolean = false;
 
   board: BoardManager;
   blocks: BlockManager;
@@ -31,14 +80,12 @@ export class GameController {
   private _lastTime: number = 0;
   private _raf: number = 0;
 
-  // Wave state
   private _waveEnemiesLeft: number = 0;
-  private _betweenWave: boolean = true;   // true = inter-wave cooldown, false = spawning wave
+  private _betweenWave: boolean = true;
 
-  // Shared refs for skill context
-  private _playerHpRef = { value: 15 };
+  bulletDmgMult: number = 1;
+  critBonus: number = 0;
 
-  // Callbacks
   onStateChange?: (state: GameState) => void;
   onRowsCleared?: (count: number) => void;
 
@@ -54,8 +101,6 @@ export class GameController {
     if (this.state !== GameState.IDLE) return;
     this._resetAll();
     this.state = GameState.PLAYING;
-    this.blocks.refillSlots();
-    // Spawn first enemy
     this.enemies.spawnEnemy(EnemyType.NORMAL);
     this._lastTime = performance.now();
     this._raf = requestAnimationFrame(this._loop.bind(this));
@@ -85,9 +130,16 @@ export class GameController {
 
   private _resetAll(): void {
     this.playerHp = 15;
-    this._playerHpRef.value = 15;
+    this.maxHp = 15;
     this.score = 0;
     this.wave = 1;
+    this.heroLevel = 1;
+    this.heroXp = 0;
+    this.heroXpNeeded = HERO_BASE_XP;
+    this.passiveSkills = [];
+    this.levelUpOptions = [];
+    this.bulletDmgMult = 1;
+    this.critBonus = 0;
     this.board.reset();
     this.blocks.reset();
     this.enemies.reset();
@@ -96,27 +148,70 @@ export class GameController {
     this._enemySpawnTimer = 0;
     this._waveEnemiesLeft = 0;
     this._betweenWave = true;
+    this._fallTimer = 0;
+    this._fallInterval = FALL_START_INTERVAL_MS;
+    this._softDrop = false;
+    this._lockTimer = 0;
+    this._lockActive = false;
   }
 
   private _loop(now: number): void {
     if (this.state !== GameState.PLAYING) return;
-    const dt = Math.min((now - this._lastTime) / 1000, 0.1); // cap at 100ms
+    const dt = Math.min((now - this._lastTime) / 1000, 0.1);
     this._lastTime = now;
     this._update(dt);
     this._raf = requestAnimationFrame(this._loop.bind(this));
   }
 
   private _update(dt: number): void {
-    // Update enemies
     this.enemies.update(dt);
-
-    // Update bullets
     this.bullets.update(dt);
+    this.skills.updateEffects(dt);
+    this._tickFireZoneDamage(dt);
+    this._tickWaveSpawn(dt);
+    this._tickGravity(dt);
+  }
 
-    // Enemy wave spawning
+  /** Apply DOT from fire zones to enemies that are inside them */
+  private _tickFireZoneDamage(dt: number): void {
+    for (const fz of this.skills.effects.fireZones) {
+      for (const e of this.enemies.enemies) {
+        const dx = e.x - fz.x;
+        const dy = e.y - fz.y;
+        if (dx * dx + dy * dy <= fz.r * fz.r) {
+          this._onEnemyDamage(e, fz.dotDamage * dt);
+        }
+      }
+    }
+  }
+
+  private _tickGravity(dt: number): void {
+    if (!this.blocks.active) return;
+    const interval = this._softDrop ? SOFT_DROP_INTERVAL_MS : this._fallInterval;
+    this._fallTimer += dt * 1000;
+
+    if (this.blocks.canMoveDown()) {
+      this._lockActive = false;
+      if (this._fallTimer >= interval) {
+        this._fallTimer = 0;
+        this.blocks.moveActive(1, 0);
+      }
+    } else {
+      if (!this._lockActive) {
+        this._lockActive = true;
+        this._lockTimer = 0;
+      }
+      this._fallTimer = 0;
+      this._lockTimer += dt * 1000;
+      if (this._lockTimer >= LOCK_DELAY_MS) {
+        this._doLockAndProcess();
+      }
+    }
+  }
+
+  private _tickWaveSpawn(dt: number): void {
     this._enemySpawnTimer += dt * 1000;
     if (this._betweenWave) {
-      // Inter-wave cooldown: decreases with wave number (min 6s)
       const interDelay = Math.max(6000, INTER_WAVE_DELAY_MS - (this.wave - 1) * 200);
       if (this._enemySpawnTimer >= interDelay) {
         this._enemySpawnTimer = 0;
@@ -125,20 +220,14 @@ export class GameController {
         this.wave++;
       }
     } else {
-      // Intra-wave: spawn enemies with short interval (min 300ms)
       const intraDelay = Math.max(300, INTRA_WAVE_DELAY_MS - (this.wave - 1) * 20);
       if (this._enemySpawnTimer >= intraDelay) {
         this._enemySpawnTimer = 0;
         this._spawnNextEnemy();
         this._waveEnemiesLeft--;
-        if (this._waveEnemiesLeft <= 0) {
-          this._betweenWave = true; // wave done, start inter-wave cooldown
-        }
+        if (this._waveEnemiesLeft <= 0) this._betweenWave = true;
       }
     }
-
-    // Sync player HP
-    this.playerHp = this._playerHpRef.value;
   }
 
   private _spawnNextEnemy(): void {
@@ -148,82 +237,85 @@ export class GameController {
     this.enemies.spawnEnemy(type);
   }
 
-  // ---- Block placement API (called from InputManager) ----
+  // ---- Input actions ----
 
-  selectSlot(index: number): boolean {
-    return this.blocks.selectSlot(index);
-  }
-
-  placeActiveAt(col: number): boolean {
-    if (!this.blocks.active || this.state !== GameState.PLAYING) return false;
-    // Move active block to target column
-    const target = col - this.blocks.active.col;
-    for (let i = 0; i < Math.abs(target); i++) {
-      this.blocks.moveActive(0, target > 0 ? 1 : -1);
-    }
-    return true;
-  }
-
-  dropActive(): void {
-    if (!this.blocks.active || this.state !== GameState.PLAYING) return;
-    this.blocks.hardDrop();
-    this._lockAndProcess();
-  }
-
-  cancelActive(): void {
+  moveLeft(): void {
     if (this.state !== GameState.PLAYING) return;
-    this.blocks.cancelActive();
+    this.blocks.moveActive(0, -1);
+    this._lockTimer = 0; // reset lock on move
   }
 
-  private _lockAndProcess(): void {
-    if (!this.blocks.active) return;
-
-    // Lock block
-    this.blocks.lockActive();
-
-    // Check game over
-    if (this.board.isTopBlocked()) {
-      this._gameOver();
-      return;
-    }
-
-    // Check and clear rows
-    const result = this.board.checkAndClearRows();
-
-    if (result.clearedRows.length > 0) {
-      this._handleClear(result);
-    }
-
-    // Score for placement
-    this.score += 5;
-
-    // Refill empty slots
-    this.blocks.refillSlots();
+  moveRight(): void {
+    if (this.state !== GameState.PLAYING) return;
+    this.blocks.moveActive(0, 1);
+    this._lockTimer = 0;
   }
 
-  private _handleClear(result: ReturnType<BoardManager['checkAndClearRows']>): void {
-    const rowCount = result.clearedRows.length;
-    this.onRowsCleared?.(rowCount);
+  setSoftDrop(on: boolean): void {
+    this._softDrop = on;
+  }
 
-    // Score
-    const scoreMap = [0, 100, 250, 500, 1000];
-    this.score += scoreMap[Math.min(rowCount, 4)];
-
-    // Accumulate element energy from cleared cells
-    for (const el of ELEMENT_TYPES) {
-      if (result.energyGained[el] > 0) {
-        this.skills.addEnergy(el, result.energyGained[el]);
-      }
-    }
-
-    // All cleared rows fire bullets
-    if (result.clearedRows.length > 0) {
-      const colors = result.clearedRows.map(() => Array(10).fill('#8ab4ff'));
-      this.bullets.fireBulletsForRows(result.clearedRows, colors);
+  softDrop(): void {
+    if (this.state !== GameState.PLAYING) return;
+    if (this.blocks.canMoveDown()) {
+      this.blocks.moveActive(1, 0);
+      this._fallTimer = 0;
     }
   }
 
-  /** Called from InputManager when player taps a skill icon */
+  hardDrop(): void {
+    if (this.state !== GameState.PLAYING || !this.blocks.active) return;
+    this.blocks.hardDrop();
+    this._doLockAndProcess();
+  }
+
+  rotate(): void {
+    if (this.state !== GameState.PLAYING) return;
+    if (this.blocks.rotate()) {
+      this._lockTimer = 0; // reset lock on rotate
+    }
+  }
+
+  // ---- Level-up skill selection ----
+
+  selectPassiveSkill(index: number): void {
+    if (this.state !== GameState.LEVEL_UP) return;
+    const chosen = this.levelUpOptions[index];
+    if (!chosen) return;
+    this.passiveSkills.push(chosen.id);
+    this._applyPassive(chosen.id);
+    this.levelUpOptions = [];
+    this.state = GameState.PLAYING;
+    this._lastTime = performance.now();
+    this._raf = requestAnimationFrame(this._loop.bind(this));
+    this.onStateChange?.(this.state);
+  }
+
+  private _applyPassive(id: PassiveSkillId): void {
+    switch (id) {
+      case 'dmg_up':        this.bulletDmgMult += 0.3; break;
+      case 'crit_chance':   this.critBonus += 0.2; break;
+      case 'wave_slow':
+        for (const e of this.enemies.enemies) e.speed *= 0.85;
+        break;
+      case 'hp_regen':      break; // handled in _handleClear
+      case 'energy_eff':    this.skills.energyCostMult = Math.max(0.25, (this.skills.energyCostMult ?? 1) - 0.25); break;
+      case 'fire_dmg':      this.skills.fireMultiplier = (this.skills.fireMultiplier ?? 1) * 2; break;
+      case 'fire_zone_dot': this.skills.fireZoneDotBonus = (this.skills.fireZoneDotBonus ?? 0) + 0.5; break;
+      case 'lightning_dmg': this.skills.lightningMult = (this.skills.lightningMult ?? 1) * 1.5;
+                            this.skills.lightningTargets = (this.skills.lightningTargets ?? 5) + 2; break;
+      case 'chain_bolt':    this.skills.chainBolt = true; break;
+      case 'frost_dur':     this.skills.frostDurBonus = (this.skills.frostDurBonus ?? 0) + 3; break;
+      case 'blizzard':      this.skills.blizzard = true; break;
+      case 'hurricane_kb':  this.skills.hurricaneTargets = (this.skills.hurricaneTargets ?? 3) + 2;
+                            this.skills.hurricaneKbMult = (this.skills.hurricaneKbMult ?? 1) * 1.5; break;
+      case 'cyclone':       this.skills.cyclone = true; break;
+      case 'multi_clear':   this.skills.multiClear = true; break;
+    }
+  }
+
+  // ---- Skill usage ----
+
   useSkill(el: ElementType): boolean {
     if (this.state !== GameState.PLAYING) return false;
     const ctx: SkillContext = {
@@ -235,6 +327,75 @@ export class GameController {
     return this.skills.useSkill(el, ctx);
   }
 
+  // ---- Lock and process ----
+
+  private _doLockAndProcess(): void {
+    if (!this.blocks.active) return;
+    this.blocks.lockActive();
+    this._lockActive = false;
+    this._lockTimer = 0;
+    this._fallTimer = 0;
+
+    if (this.board.isTopBlocked()) {
+      this._gameOver();
+      return;
+    }
+
+    const result = this.board.checkAndClearRows();
+    if (result.clearedRows.length > 0) {
+      this._handleClear(result);
+    }
+
+    this.score += 5;
+    this.blocks.spawnNext();
+  }
+
+  private _handleClear(result: ReturnType<BoardManager['checkAndClearRows']>): void {
+    const rowCount = result.clearedRows.length;
+    this.onRowsCleared?.(rowCount);
+
+    const scoreMap = [0, 100, 250, 500, 1000];
+    this.score += scoreMap[Math.min(rowCount, 4)];
+
+    const xp = HERO_XP_TABLE[Math.min(rowCount, 4)] ?? 0;
+    this._gainHeroXp(xp);
+
+    for (const el of ELEMENT_TYPES) {
+      if (result.energyGained[el] > 0) {
+        this.skills.addEnergy(el, result.energyGained[el]);
+      }
+    }
+
+    if (result.clearedRows.length > 0) {
+      this.bullets.fireBulletsForRows(result.clearedRows, result.clearedRows.map(() => Array(COLS).fill('#8ab4ff')), this.bulletDmgMult, this.critBonus);
+    }
+
+    if (this.skills.multiClear) {
+      this.bullets.fireBulletsForRows(result.clearedRows, result.clearedRows.map(() => Array(COLS).fill('#ffffaa')), this.bulletDmgMult * 0.5, this.critBonus);
+    }
+
+    if (this.passiveSkills.includes('hp_regen')) {
+      this.playerHp = Math.min(this.maxHp, this.playerHp + rowCount);
+    }
+  }
+
+  private _gainHeroXp(xp: number): void {
+    this.heroXp += xp;
+    while (this.heroXp >= this.heroXpNeeded) {
+      this.heroXp -= this.heroXpNeeded;
+      this.heroLevel++;
+      this.heroXpNeeded = Math.floor(HERO_BASE_XP * Math.pow(HERO_XP_MULTIPLIER, this.heroLevel - 1));
+      this._triggerLevelUp();
+    }
+  }
+
+  private _triggerLevelUp(): void {
+    this.levelUpOptions = pickSkillOptions(this.passiveSkills);
+    this.state = GameState.LEVEL_UP;
+    cancelAnimationFrame(this._raf);
+    this.onStateChange?.(this.state);
+  }
+
   private _onEnemyDamage(enemy: Enemy, dmg: number): void {
     this.enemies.applyDamage(enemy, dmg);
     if (enemy.hp <= 0) {
@@ -244,29 +405,13 @@ export class GameController {
   }
 
   private _onEnemyLeak(enemy: Enemy): void {
-    this._playerHpRef.value = Math.max(0, this._playerHpRef.value - enemy.leakDamage);
-    this.playerHp = this._playerHpRef.value;
-    if (this.playerHp <= 0) {
-      this._gameOver();
-    }
+    this.playerHp = Math.max(0, this.playerHp - enemy.leakDamage);
+    if (this.playerHp <= 0) this._gameOver();
   }
 
   private _gameOver(): void {
     this.state = GameState.GAME_OVER;
     cancelAnimationFrame(this._raf);
     this.onStateChange?.(this.state);
-  }
-
-  // Called from InputManager for touch/drag
-  moveActiveTo(col: number): void {
-    if (!this.blocks.active || this.state !== GameState.PLAYING) return;
-    const target = col - this.blocks.active.col;
-    this.blocks.moveActive(0, target > 0 ? 1 : -1);
-  }
-
-  setActiveCol(col: number): void {
-    if (!this.blocks.active) return;
-    const diff = col - this.blocks.active.col;
-    if (diff !== 0) this.blocks.moveActive(0, diff > 0 ? 1 : -1);
   }
 }

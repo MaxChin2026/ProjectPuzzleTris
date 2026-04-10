@@ -13,12 +13,23 @@ export const BOARD_LEFT = PATH_WIDTH; // board x offset (path on left)
 export const BOARD_TOP  = 60;         // HUD height — compact for mobile
 
 // Canvas dimensions
+export const CONTROL_AREA_H = 120;   // virtual D-pad + rotate button below board
 export const CANVAS_W = BOARD_LEFT + COLS * CELL_SIZE + PATH_WIDTH + SKILL_PANEL_W;
-export const CANVAS_H = BOARD_TOP + ROWS * CELL_SIZE + 90;   // +90 for slot area
+export const CANVAS_H = BOARD_TOP + ROWS * CELL_SIZE + CONTROL_AREA_H;
 
-// Block slot area (below board)
-export const SLOT_AREA_H = 80;
-export const SLOT_COUNT  = 5;
+// Tetris gravity
+export const FALL_START_INTERVAL_MS = 800;  // ms per gravity step at level 1
+export const FALL_MIN_INTERVAL_MS   = 80;   // fastest gravity step
+export const SOFT_DROP_INTERVAL_MS  = 50;   // ms per step during soft drop
+export const LOCK_DELAY_MS         = 500;   // ms on ground before locking
+export const LEVEL_SPEED_FACTOR    = 0.93;  // gravity interval *= this per Tetris level
+
+// Hero system
+export const HERO_BASE_XP        = 80;    // XP needed for level 2
+export const HERO_XP_MULTIPLIER  = 1.35;  // XP needed scales up each level
+export const HERO_XP_TABLE: Record<number, number> = {
+  1: 10, 2: 25, 3: 50, 4: 100,   // XP awarded for clearing 1/2/3/4 rows
+};
 
 // Timing
 // Wave-based enemy spawning
