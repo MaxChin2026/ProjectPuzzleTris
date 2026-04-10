@@ -63,6 +63,9 @@ export class GameController {
   passiveSkills: PassiveSkillId[] = [];
   levelUpOptions: PassiveSkillDef[] = [];
 
+  // Wave notification (shown by Renderer)
+  waveNotification: { text: string; alpha: number; timer: number } | null = null;
+
   // Tetris gravity
   private _fallTimer: number = 0;
   private _fallInterval: number = FALL_START_INTERVAL_MS;
@@ -140,6 +143,7 @@ export class GameController {
     this.levelUpOptions = [];
     this.bulletDmgMult = 1;
     this.critBonus = 0;
+    this.waveNotification = null;
     this.board.reset();
     this.blocks.reset();
     this.enemies.reset();
@@ -170,6 +174,15 @@ export class GameController {
     this._tickFireZoneDamage(dt);
     this._tickWaveSpawn(dt);
     this._tickGravity(dt);
+    // Tick wave notification alpha
+    if (this.waveNotification) {
+      this.waveNotification.timer -= dt;
+      if (this.waveNotification.timer <= 0) {
+        this.waveNotification = null;
+      } else {
+        this.waveNotification.alpha = Math.min(1, this.waveNotification.timer / 0.5);
+      }
+    }
   }
 
   /** Apply DOT from fire zones to enemies that are inside them */
@@ -212,20 +225,20 @@ export class GameController {
   private _tickWaveSpawn(dt: number): void {
     this._enemySpawnTimer += dt * 1000;
     if (this._betweenWave) {
-      const interDelay = Math.max(6000, INTER_WAVE_DELAY_MS - (this.wave - 1) * 200);
+      const interDelay = Math.max(5000, INTER_WAVE_DELAY_MS - (this.wave - 1) * 200);
       if (this._enemySpawnTimer >= interDelay) {
         this._enemySpawnTimer = 0;
         this._betweenWave = false;
-        this._waveEnemiesLeft = Math.min(12, WAVE_SIZE_BASE + Math.floor((this.wave - 1) / 2));
+        const waveNum = this.wave;
         this.wave++;
-      }
-    } else {
-      const intraDelay = Math.max(300, INTRA_WAVE_DELAY_MS - (this.wave - 1) * 20);
-      if (this._enemySpawnTimer >= intraDelay) {
-        this._enemySpawnTimer = 0;
-        this._spawnNextEnemy();
-        this._waveEnemiesLeft--;
-        if (this._waveEnemiesLeft <= 0) this._betweenWave = true;
+        const count = Math.min(12, WAVE_SIZE_BASE + Math.floor((waveNum - 1) / 2));
+        // Spawn all enemies of this wave at once (compact, tight formation)
+        for (let i = 0; i < count; i++) {
+          this._spawnNextEnemy();
+        }
+        // Wave notification text
+        this.waveNotification = { text: `Wave ${waveNum}`, alpha: 1, timer: 2.2 };
+        this._betweenWave = true; // immediately reset, next wave after inter-delay
       }
     }
   }

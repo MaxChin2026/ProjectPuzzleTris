@@ -16,7 +16,6 @@ import {
   CTRL_Y, CTRL_H,
   DPAD_CX, DPAD_CY, DPAD_BTN_OFFSET, DPAD_BTN_SIZE, getDpadBtnRect,
   ROTATE_BTN_CX, ROTATE_BTN_CY, ROTATE_BTN_R,
-  NEXT_BOX_X, NEXT_BOX_Y, NEXT_BOX_W, NEXT_BOX_H,
   getLevelUpCardRect, SKILL_PANEL_X,
   LEVELUP_CARD_W, LEVELUP_CARD_H,
 } from './layout';
@@ -55,6 +54,7 @@ export class Renderer {
     this._drawFrostFlash();
     this._drawFloatingTexts();
     this._drawSkillPanel();
+    this._drawWaveNotification();
     this._drawControlArea();
 
     if (this._gc.state === GameState.LEVEL_UP) {
@@ -112,7 +112,7 @@ export class Renderer {
     ctx.fillStyle = '#fa0';
     ctx.font = '9px monospace';
     ctx.textAlign = 'right';
-    ctx.fillText(`Wave ${this._gc.wave}  👾${this._gc.enemies.enemies.length}`, CANVAS_W - 6, 20);
+    ctx.fillText(`Wave ${this._gc.wave}  E:${this._gc.enemies.enemies.length}`, CANVAS_W - 6, 20);
     ctx.textAlign = 'left';
   }
 
@@ -434,89 +434,157 @@ export class Renderer {
     ctx.textAlign = 'left';
   }
 
-  // ---- Skill Panel (right side) ------------------------------
+  // ---- Skill Panel (right side) + NEXT piece preview ----
   private _drawSkillPanel(): void {
     const ctx = this._ctx;
     const panelX = SKILL_PANEL_X;
     const panelW = SKILL_PANEL_W;
     const boardH = ROWS * CELL_SIZE;
-
-    ctx.fillStyle = 'rgba(10,10,20,0.85)';
+    ctx.fillStyle = 'rgba(10,10,20,0.92)';
     ctx.fillRect(panelX, BOARD_TOP, panelW, boardH);
 
-    const skills = this._gc.skills.all;
-    const iconSize = 36;
-    const spacing = Math.floor(boardH / skills.length);
-    const cx = panelX + panelW / 2;
-
-    for (let i = 0; i < skills.length; i++) {
-      const sk = skills[i];
-      const cy = BOARD_TOP + spacing * i + spacing / 2;
-      const charges = this._gc.skills.getCharges(sk.element);
-      const partial = this._gc.skills.getPartialProgress(sk.element);
-      const r = iconSize / 2;
-
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(30,30,50,0.9)';
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-      ctx.lineWidth = 3;
-      ctx.stroke();
-
-      if (charges > 0 || partial > 0) {
-        const startAngle = -Math.PI / 2;
-        if (charges > 0) {
-          ctx.save();
-          ctx.shadowBlur = 12;
-          ctx.shadowColor = sk.color;
-          ctx.beginPath();
-          ctx.arc(cx, cy, r, 0, Math.PI * 2);
-          ctx.strokeStyle = sk.color;
-          ctx.lineWidth = 3;
-          ctx.globalAlpha = Math.min(1, 0.6 + charges * 0.15);
-          ctx.stroke();
-          ctx.restore();
-          ctx.globalAlpha = 1;
-        }
-        if (partial > 0) {
-          ctx.beginPath();
-          ctx.arc(cx, cy, r, startAngle, startAngle + partial * Math.PI * 2);
-          ctx.strokeStyle = sk.color;
-          ctx.lineWidth = 3;
-          ctx.globalAlpha = 0.5;
-          ctx.stroke();
-          ctx.globalAlpha = 1;
-        }
+    // NEXT piece preview (top of panel)
+    const nextBoxH = 78;
+    const nextBoxY = BOARD_TOP + 4;
+    ctx.fillStyle = 'rgba(20,20,35,0.9)';
+    ctx.fillRect(panelX + 2, nextBoxY, panelW - 4, nextBoxH);
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(panelX + 2, nextBoxY, panelW - 4, nextBoxH);
+    ctx.fillStyle = 'rgba(180,180,180,0.6)';
+    ctx.font = 'bold 8px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('NEXT', panelX + panelW / 2, nextBoxY + 10);
+    const next = this._gc.blocks.next;
+    if (next) {
+      const cellSz = 10;
+      const nrows = next.cells.map(([r]) => r);
+      const ncols = next.cells.map(([, c]) => c);
+      const nMinR = Math.min(...nrows), nMinC = Math.min(...ncols);
+      const nMaxC = Math.max(...ncols);
+      const nMaxR = Math.max(...nrows);
+      const nbw = (nMaxC - nMinC + 1) * cellSz;
+      const nbh = (nMaxR - nMinR + 1) * cellSz;
+      const offX = panelX + (panelW - nbw) / 2;
+      const offY = nextBoxY + 14 + (nextBoxH - 14 - nbh) / 2;
+      ctx.save();
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = next.color;
+      for (const [dr, dc] of next.cells) {
+        const cx2 = offX + (dc - nMinC) * cellSz;
+        const cy2 = offY + (dr - nMinR) * cellSz;
+        ctx.fillStyle = next.color;
+        ctx.fillRect(cx2 + 1, cy2 + 1, cellSz - 2, cellSz - 2);
       }
-
-      ctx.font = `${Math.floor(r * 0.9)}px monospace`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = charges > 0 ? '#fff' : 'rgba(200,200,200,0.5)';
-      ctx.fillText(sk.icon, cx, cy);
-
-      if (charges > 0) {
-        const bx = cx + r * 0.6;
-        const by = cy - r * 0.6;
-        ctx.beginPath();
-        ctx.arc(bx, by, 7, 0, Math.PI * 2);
-        ctx.fillStyle = sk.color;
-        ctx.fill();
-        ctx.font = 'bold 9px monospace';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#000';
-        ctx.fillText(String(charges), bx, by);
-      }
-
-      ctx.textBaseline = 'alphabetic';
+      ctx.restore();
     }
 
+    // Skill icons (below NEXT)
+    const skillsAreaY = nextBoxY + nextBoxH + 6;
+    const skillsAreaH = boardH - nextBoxH - 10;
+    const skills = this._gc.skills.all;
+    const iconR = 17;
+    const slotH = Math.floor(skillsAreaH / skills.length);
+    const panCX = panelX + panelW / 2;
+    for (let i = 0; i < skills.length; i++) {
+      const sk = skills[i];
+      const cy = skillsAreaY + slotH * i + slotH / 2;
+      const charges = this._gc.skills.getCharges(sk.element);
+      const partial = this._gc.skills.getPartialProgress(sk.element);
+      const dim = charges === 0 && partial < 0.05;
+      ctx.beginPath();
+      ctx.arc(panCX, cy, iconR, 0, Math.PI * 2);
+      ctx.fillStyle = dim ? 'rgba(20,20,35,0.7)' : 'rgba(20,20,35,0.95)';
+      ctx.fill();
+      this._drawElementIcon(ctx, sk.element, panCX, cy, iconR, dim);
+      const startAngle = -Math.PI / 2;
+      if (charges > 0) {
+        const pulse = 0.7 + 0.3 * Math.sin(performance.now() / 300 + i);
+        ctx.save();
+        ctx.shadowBlur = 14 * pulse; ctx.shadowColor = sk.color;
+        ctx.beginPath(); ctx.arc(panCX, cy, iconR + 2, 0, Math.PI * 2);
+        ctx.strokeStyle = sk.color; ctx.lineWidth = 2.5; ctx.globalAlpha = pulse;
+        ctx.stroke(); ctx.restore(); ctx.globalAlpha = 1;
+      }
+      if (partial > 0.01) {
+        ctx.beginPath();
+        ctx.arc(panCX, cy, iconR + 2, startAngle, startAngle + partial * Math.PI * 2);
+        ctx.strokeStyle = sk.color; ctx.lineWidth = 2.5; ctx.globalAlpha = 0.5;
+        ctx.stroke(); ctx.globalAlpha = 1;
+      }
+      if (charges > 0) {
+        const bx = panCX + iconR * 0.65, by = cy - iconR * 0.65;
+        ctx.beginPath(); ctx.arc(bx, by, 7, 0, Math.PI * 2);
+        ctx.fillStyle = sk.color; ctx.fill();
+        ctx.font = 'bold 8px monospace'; ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle'; ctx.fillStyle = '#000';
+        ctx.fillText(String(charges), bx, by);
+      }
+      ctx.textBaseline = 'alphabetic';
+    }
     ctx.textAlign = 'left';
+  }
+
+  private _drawElementIcon(ctx: CanvasRenderingContext2D, el: string, x: number, y: number, r: number, dim: boolean): void {
+    const a = dim ? 0.3 : 1;
+    switch (el) {
+      case 'fire': {
+        const grad = ctx.createRadialGradient(x, y + r * 0.3, 0, x, y, r);
+        grad.addColorStop(0, 'rgba(255,220,0,' + a + ')');
+        grad.addColorStop(0.5, 'rgba(255,80,0,' + a + ')');
+        grad.addColorStop(1, 'rgba(180,0,0,' + (a * 0.3) + ')');
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.ellipse(x, y + r * 0.2, r * 0.55, r * 0.75, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,100,' + (a * 0.9) + ')';
+        ctx.beginPath(); ctx.ellipse(x, y - r * 0.3, r * 0.25, r * 0.4, 0, 0, Math.PI * 2); ctx.fill();
+        break;
+      }
+      case 'lightning': {
+        ctx.save();
+        if (!dim) { ctx.shadowBlur = 10; ctx.shadowColor = '#ffff00'; }
+        ctx.fillStyle = 'rgba(255,220,0,' + a + ')'; ctx.strokeStyle = 'rgba(255,255,200,' + a + ')'; ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x + r * 0.15, y - r * 0.85); ctx.lineTo(x - r * 0.15, y - r * 0.1);
+        ctx.lineTo(x + r * 0.25, y - r * 0.1);  ctx.lineTo(x - r * 0.15, y + r * 0.85);
+        ctx.lineTo(x + r * 0.1,  y + r * 0.1);  ctx.lineTo(x - r * 0.25, y + r * 0.1);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.restore(); break;
+      }
+      case 'frost': {
+        ctx.save();
+        if (!dim) { ctx.shadowBlur = 8; ctx.shadowColor = '#88eeff'; }
+        ctx.strokeStyle = 'rgba(100,200,255,' + a + ')'; ctx.lineWidth = 2;
+        for (let i = 0; i < 6; i++) {
+          const angle = (i / 6) * Math.PI * 2;
+          ctx.beginPath(); ctx.moveTo(x, y);
+          ctx.lineTo(x + Math.cos(angle) * r * 0.85, y + Math.sin(angle) * r * 0.85); ctx.stroke();
+          const mx = x + Math.cos(angle) * r * 0.5, my = y + Math.sin(angle) * r * 0.5;
+          const tickA = angle + Math.PI / 4;
+          ctx.beginPath();
+          ctx.moveTo(mx + Math.cos(tickA) * r * 0.25, my + Math.sin(tickA) * r * 0.25);
+          ctx.lineTo(mx - Math.cos(tickA) * r * 0.25, my - Math.sin(tickA) * r * 0.25); ctx.stroke();
+        }
+        ctx.fillStyle = 'rgba(150,230,255,' + (a * 0.9) + ')';
+        ctx.beginPath(); ctx.arc(x, y, r * 0.2, 0, Math.PI * 2); ctx.fill();
+        ctx.restore(); break;
+      }
+      case 'hurricane': {
+        ctx.save();
+        if (!dim) { ctx.shadowBlur = 10; ctx.shadowColor = '#44ff88'; }
+        ctx.strokeStyle = 'rgba(40,220,100,' + a + ')'; ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        for (let i = 0; i < 30; i++) {
+          const ang = (i / 30) * Math.PI * 2.5;
+          const rad = r * 0.2 + r * 0.6 * (i / 30);
+          if (i === 0) ctx.moveTo(x + Math.cos(ang) * rad, y + Math.sin(ang) * rad);
+          else ctx.lineTo(x + Math.cos(ang) * rad, y + Math.sin(ang) * rad);
+        }
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(60,255,130,' + a + ')';
+        ctx.beginPath(); ctx.arc(x, y, r * 0.18, 0, Math.PI * 2); ctx.fill();
+        ctx.restore(); break;
+      }
+    }
   }
 
   // ---- Control Area (D-pad + rotate + next piece) ------------
@@ -535,7 +603,6 @@ export class Renderer {
 
     this._drawDpad();
     this._drawRotateButton();
-    this._drawNextPiece();
   }
 
   private _drawDpad(): void {
@@ -600,48 +667,42 @@ export class Renderer {
     ctx.textAlign = 'left';
   }
 
-  private _drawNextPiece(): void {
+  // ---- Wave Notification (center top of board) --------------
+  private _drawWaveNotification(): void {
+    const notif = this._gc.waveNotification;
+    if (!notif || notif.alpha <= 0) return;
     const ctx = this._ctx;
-    const nx = NEXT_BOX_X;
-    const ny = NEXT_BOX_Y;
-    const nw = NEXT_BOX_W;
-    const nh = NEXT_BOX_H;
-
-    ctx.fillStyle = 'rgba(25,25,40,0.9)';
-    ctx.fillRect(nx, ny, nw, nh);
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(nx, ny, nw, nh);
-
-    ctx.fillStyle = 'rgba(200,200,200,0.5)';
-    ctx.font = '9px monospace';
+    const boardCX = BOARD_LEFT + (COLS * CELL_SIZE) / 2;
+    const boardCY = BOARD_TOP + (ROWS * CELL_SIZE) / 4;
+    // Scale: animate in (from alpha=0) and out (fade)
+    const scale = 0.8 + 0.2 * Math.min(1, (2.2 - notif.timer) / 0.3);
+    ctx.save();
+    ctx.globalAlpha = notif.alpha;
+    ctx.translate(boardCX, boardCY);
+    ctx.scale(scale, scale);
+    // Shadow/glow
+    ctx.shadowBlur = 30;
+    ctx.shadowColor = '#ff8800';
+    // Background pill
+    const text = notif.text;
+    ctx.font = 'bold 28px monospace';
+    const tw = ctx.measureText(text).width;
+    const ph = 42, pw = tw + 32;
+    ctx.fillStyle = 'rgba(0,0,0,0.75)';
+    ctx.beginPath();
+    ctx.roundRect(-pw / 2, -ph / 2, pw, ph, 12);
+    ctx.fill();
+    ctx.strokeStyle = '#ff8800';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    // Text
+    ctx.fillStyle = '#ffcc00';
+    ctx.shadowBlur = 0;
     ctx.textAlign = 'center';
-    ctx.fillText('NEXT', nx + nw / 2, ny + 11);
-
-    const next = this._gc.blocks.next;
-    if (next) {
-      const cellSz = 13;
-      const rows = next.cells.map(([r]) => r);
-      const cols = next.cells.map(([, c]) => c);
-      const minR = Math.min(...rows), maxR = Math.max(...rows);
-      const minC = Math.min(...cols), maxC = Math.max(...cols);
-      const bw = (maxC - minC + 1) * cellSz;
-      const bh = (maxR - minR + 1) * cellSz;
-      const offX = nx + (nw - bw) / 2;
-      const offY = ny + 16 + (nh - 16 - bh) / 2;
-
-      ctx.save();
-      ctx.shadowBlur = 8;
-      ctx.shadowColor = next.color;
-      for (const [dr, dc] of next.cells) {
-        const cx = offX + (dc - minC) * cellSz;
-        const cy = offY + (dr - minR) * cellSz;
-        ctx.fillStyle = next.color;
-        ctx.fillRect(cx + 1, cy + 1, cellSz - 2, cellSz - 2);
-      }
-      ctx.restore();
-    }
-
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, 0, 0);
+    ctx.restore();
+    ctx.textBaseline = 'alphabetic';
     ctx.textAlign = 'left';
   }
 
