@@ -18,8 +18,25 @@ export const enum GameState {
   IDLE = 'IDLE',
   PLAYING = 'PLAYING',
   PAUSED = 'PAUSED',
+  LEVEL_UP = 'LEVEL_UP',
   GAME_OVER = 'GAME_OVER',
   VICTORY = 'VICTORY',
+}
+
+// ---- Passive Skills -----------------------------------------
+
+export type PassiveSkillId =
+  | 'dmg_up'       | 'fire_dmg'     | 'lightning_dmg' | 'frost_dur'
+  | 'hurricane_kb' | 'multi_clear'  | 'energy_eff'    | 'hp_regen'
+  | 'wave_slow'    | 'crit_chance'  | 'fire_zone_dot' | 'chain_bolt'
+  | 'blizzard'     | 'cyclone';
+
+export interface PassiveSkillDef {
+  id: PassiveSkillId;
+  name: string;
+  desc: string;
+  element: ElementType | 'neutral';
+  icon: string;
 }
 
 export const enum ShapeType {

@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "00-ELEMENTRIS-总索引.md",
+                "file": "修订记录-v0.7.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "00-ELEMENTRIS-总索引"
+              "title": "修订记录-v0.7"
             }
           }
         ]
@@ -185,6 +185,8 @@
   },
   "active": "38a97e804ab12397",
   "lastOpenFiles": [
+    "修订记录-v0.8.md",
+    "00-ELEMENTRIS-总索引.md",
     "修订记录-v0.7.md",
     "修订记录-v0.5.md",
     "修订记录-v0.6.md",
@@ -205,12 +207,10 @@
     "03-塔防战斗系统.md",
     "02-游戏机制.md",
     "01-核心概述.md",
-    "00-ELEMENTRIS-总索引.md",
     "CONFIG-敌人配置表-DEPRECATED.md",
     "03-干扰方块与预警系统.md",
     "设计概念修改.md",
     "03-英雄与RPG系统.md",
-    "CONFIG-英雄配置表.md",
     "新建 文本文档.txt"
   ]
 }
