@@ -480,15 +480,15 @@ export class Renderer {
     }
 
     // Skill icons (below NEXT)
-    const skillsAreaY = nextBoxY + nextBoxH + 6;
-    const skillsAreaH = boardH - nextBoxH - 10;
     const skills = this._gc.skills.all;
-    const iconR = 17;
-    const slotH = Math.floor(skillsAreaH / skills.length);
+    const iconR = 20;
+    const iconSpacing = 50;  // px between icon centers — tight grouping
+    const bottomY = BOARD_TOP + boardH - 30; // hurricane anchored near bottom
     const panCX = panelX + panelW / 2;
     for (let i = 0; i < skills.length; i++) {
       const sk = skills[i];
-      const cy = skillsAreaY + slotH * i + slotH / 2;
+      // Bottom-anchor: hurricane (last) at bottomY, others stacked upward
+      const cy = bottomY - (skills.length - 1 - i) * iconSpacing;
       const charges = this._gc.skills.getCharges(sk.element);
       const partial = this._gc.skills.getPartialProgress(sk.element);
       const dim = charges === 0 && partial < 0.05;

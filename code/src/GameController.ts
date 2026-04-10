@@ -237,7 +237,7 @@ export class GameController {
           this._spawnNextEnemy();
         }
         // Wave notification text
-        this.waveNotification = { text: `Wave ${waveNum}`, alpha: 1, timer: 2.2 };
+        this.waveNotification = { text: `Wave-${waveNum}`, alpha: 1, timer: 2.2 };
         this._betweenWave = true; // immediately reset, next wave after inter-delay
       }
     }
