@@ -529,24 +529,32 @@ export class Renderer {
     const a = dim ? 0.3 : 1;
     switch (el) {
       case 'fire': {
-        const grad = ctx.createRadialGradient(x, y + r * 0.3, 0, x, y, r);
-        grad.addColorStop(0, 'rgba(255,220,0,' + a + ')');
-        grad.addColorStop(0.5, 'rgba(255,80,0,' + a + ')');
-        grad.addColorStop(1, 'rgba(180,0,0,' + (a * 0.3) + ')');
-        ctx.fillStyle = grad;
-        ctx.beginPath(); ctx.ellipse(x, y + r * 0.2, r * 0.55, r * 0.75, 0, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = 'rgba(255,255,100,' + (a * 0.9) + ')';
-        ctx.beginPath(); ctx.ellipse(x, y - r * 0.3, r * 0.25, r * 0.4, 0, 0, Math.PI * 2); ctx.fill();
+        // Circular fireball — no stretching
+        const grad = ctx.createRadialGradient(x - r * 0.1, y - r * 0.1, 0, x, y, r * 0.9);
+        grad.addColorStop(0,    'rgba(255,255,160,' + a + ')');
+        grad.addColorStop(0.3,  'rgba(255,120,0,'  + a + ')');
+        grad.addColorStop(0.65, 'rgba(220,0,0,'    + a + ')');
+        grad.addColorStop(1,    'rgba(140,0,0,0)');
+        ctx.beginPath(); ctx.arc(x, y, r * 0.88, 0, Math.PI * 2);
+        ctx.fillStyle = grad; ctx.fill();
+        // Bright core dot
+        ctx.beginPath(); ctx.arc(x - r * 0.1, y - r * 0.15, r * 0.22, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,200,' + (a * 0.9) + ')'; ctx.fill();
         break;
       }
       case 'lightning': {
         ctx.save();
-        if (!dim) { ctx.shadowBlur = 10; ctx.shadowColor = '#ffff00'; }
-        ctx.fillStyle = 'rgba(255,220,0,' + a + ')'; ctx.strokeStyle = 'rgba(255,255,200,' + a + ')'; ctx.lineWidth = 1.5;
+        if (!dim) { ctx.shadowBlur = 12; ctx.shadowColor = '#ffff00'; }
+        ctx.fillStyle = 'rgba(255,220,0,' + a + ')';
+        ctx.strokeStyle = 'rgba(255,255,200,' + a + ')'; ctx.lineWidth = 1.5;
         ctx.beginPath();
-        ctx.moveTo(x + r * 0.15, y - r * 0.85); ctx.lineTo(x - r * 0.15, y - r * 0.1);
-        ctx.lineTo(x + r * 0.25, y - r * 0.1);  ctx.lineTo(x - r * 0.15, y + r * 0.85);
-        ctx.lineTo(x + r * 0.1,  y + r * 0.1);  ctx.lineTo(x - r * 0.25, y + r * 0.1);
+        // Proportional Z-bolt: wide top-right → mid-left → wide bottom-left
+        ctx.moveTo(x + r * 0.35, y - r * 0.75);  // top-right
+        ctx.lineTo(x - r * 0.1,  y - r * 0.08);  // mid-left
+        ctx.lineTo(x + r * 0.28, y - r * 0.08);  // mid-right indent
+        ctx.lineTo(x - r * 0.35, y + r * 0.75);  // bottom-left
+        ctx.lineTo(x + r * 0.08, y + r * 0.08);  // mid-right
+        ctx.lineTo(x - r * 0.28, y + r * 0.08);  // mid-left indent
         ctx.closePath(); ctx.fill(); ctx.stroke();
         ctx.restore(); break;
       }
