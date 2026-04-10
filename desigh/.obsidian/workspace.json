@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "修订记录-v0.7.md",
+                "file": "修订记录-v0.8.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "修订记录-v0.7"
+              "title": "修订记录-v0.8"
             }
           }
         ]
@@ -185,9 +185,9 @@
   },
   "active": "38a97e804ab12397",
   "lastOpenFiles": [
+    "修订记录-v0.7.md",
     "修订记录-v0.8.md",
     "00-ELEMENTRIS-总索引.md",
-    "修订记录-v0.7.md",
     "修订记录-v0.5.md",
     "修订记录-v0.6.md",
     "CONFIG-干扰方块配置表.md",

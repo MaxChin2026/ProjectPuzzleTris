@@ -1,5 +1,5 @@
 // ============================================================
-// ELEMENTRIS ¡ª Renderer
+// ELEMENTRIS ï¿½ï¿½ Renderer
 // Canvas 2D rendering for all game layers
 // ============================================================
 
@@ -112,7 +112,7 @@ export class Renderer {
     ctx.fillStyle = '#fa0';
     ctx.font = '9px monospace';
     ctx.textAlign = 'right';
-    ctx.fillText(`Wave ${this._gc.wave}  ??${this._gc.enemies.enemies.length}`, CANVAS_W - 6, 20);
+    ctx.fillText(`Wave ${this._gc.wave}  ðŸ‘¾${this._gc.enemies.enemies.length}`, CANVAS_W - 6, 20);
     ctx.textAlign = 'left';
   }
 
@@ -132,7 +132,7 @@ export class Renderer {
     ctx.save();
     ctx.translate(BOARD_LEFT / 2, BOARD_TOP + boardH / 2);
     ctx.rotate(-Math.PI / 2);
-    ctx.fillText('¡ø¡ø¡ø¡ø¡ø', -50, 0);
+    ctx.fillText('ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½', -50, 0);
     ctx.restore();
 
     ctx.fillText('? ? ? ? ?', BOARD_LEFT + 10, BOARD_TOP - PATH_WIDTH / 2 + 6);
@@ -140,7 +140,7 @@ export class Renderer {
     ctx.save();
     ctx.translate(BOARD_LEFT + boardW + PATH_WIDTH / 2, BOARD_TOP + boardH / 2);
     ctx.rotate(Math.PI / 2);
-    ctx.fillText('¡ø¡ø¡ø¡ø¡ø', -50, 0);
+    ctx.fillText('ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½', -50, 0);
     ctx.restore();
 
     ctx.fillStyle = 'rgba(0,255,120,0.5)';
@@ -541,7 +541,7 @@ export class Renderer {
   private _drawDpad(): void {
     const ctx = this._ctx;
     const dirs = ['left', 'right', 'up', 'down'] as const;
-    const labels: Record<string, string> = { left: '?', right: '?', up: '¡ø', down: '¨‹' };
+    const labels: Record<string, string> = { left: '?', right: '?', up: 'ï¿½ï¿½', down: 'ï¿½ï¿½' };
 
     for (const dir of dirs) {
       const r = getDpadBtnRect(dir);
@@ -589,14 +589,14 @@ export class Renderer {
     ctx.font = 'bold 18px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('?', cx, cy);
+    ctx.fillText('â†»', cx, cy);
     ctx.restore();
 
     ctx.fillStyle = 'rgba(200,200,200,0.5)';
     ctx.font = '9px monospace';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'alphabetic';
-    ctx.fillText('Ðý×ª', cx, cy + r + 12);
+    ctx.fillText('æ—‹è½¬', cx, cy + r + 12);
     ctx.textAlign = 'left';
   }
 
@@ -665,7 +665,7 @@ export class Renderer {
     ctx.shadowBlur = 0;
     ctx.fillStyle = '#aaa';
     ctx.font = '11px monospace';
-    ctx.fillText('Ñ¡ÔñÒ»¸ö±»¶¯¼¼ÄÜ', CANVAS_W / 2, titleY + 18);
+    ctx.fillText('é€‰æ‹©ä¸€ä¸ªè¢«åŠ¨æŠ€èƒ½', CANVAS_W / 2, titleY + 18);
 
     // Skill cards
     for (let i = 0; i < gc.levelUpOptions.length; i++) {
@@ -756,9 +756,9 @@ export class Renderer {
       ctx.fillText('ELEMENTRIS', cx, cy - 30);
       ctx.font = '14px monospace';
       ctx.fillStyle = '#adf';
-      ctx.fillText('Tetris ¡Á Tower Defense', cx, cy);
+      ctx.fillText('Tetris x Tower Defense', cx, cy);
       ctx.fillStyle = '#fa0';
-      ctx.fillText('µã»÷¿ªÊ¼', cx, cy + 40);
+      ctx.fillText('ç‚¹å‡»å¼€å§‹', cx, cy + 40);
     } else if (this._gc.state === GameState.GAME_OVER) {
       ctx.fillStyle = '#ff4b4b';
       ctx.font = 'bold 28px monospace';
@@ -768,7 +768,7 @@ export class Renderer {
       ctx.font = '14px monospace';
       ctx.fillText(`Score: ${this._gc.score}`, cx, cy + 5);
       ctx.fillStyle = '#fa0';
-      ctx.fillText('µã»÷ÖØÐÂ¿ªÊ¼', cx, cy + 40);
+      ctx.fillText('ç‚¹å‡»é‡æ–°å¼€å§‹', cx, cy + 40);
     }
 
     ctx.textAlign = 'left';

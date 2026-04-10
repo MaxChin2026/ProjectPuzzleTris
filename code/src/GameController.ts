@@ -22,20 +22,20 @@ import { SkillManager, SkillContext } from './SkillManager';
 // ---- Passive skill library ----------------------------------
 
 const PASSIVE_SKILL_POOL: PassiveSkillDef[] = [
-  { id: 'dmg_up',        name: '����ǿ��',   desc: '�ӵ��˺� +30%',                    element: 'neutral',   icon: '??' },
-  { id: 'fire_dmg',      name: '��������',   desc: '���漼���˺� ��2',                  element: 'fire',      icon: '??' },
-  { id: 'fire_zone_dot', name: '����ս��',   desc: '��������ȼ���˺� +50%',            element: 'fire',      icon: '??' },
-  { id: 'lightning_dmg', name: '�������',   desc: '�������� +2 Ŀ�꣬�˺� ��1.5',      element: 'lightning', icon: '?' },
-  { id: 'chain_bolt',    name: '�ֲ�����',   desc: '�����ÿ��Ŀ���ٴηֲ��˺�',       element: 'lightning', icon: '???' },
-  { id: 'frost_dur',     name: '��������',   desc: '��˪����ʱ�� +3 ��',              element: 'frost',     icon: '??' },
-  { id: 'blizzard',      name: '����ѩ',     desc: '��˪ͬʱ����δ������� 70%',       element: 'frost',     icon: '???' },
-  { id: 'hurricane_kb',  name: 'ǿ��쫷�',   desc: '쫷� +2 Ŀ�꣬���˾��� ��1.5',     element: 'hurricane', icon: '???' },
-  { id: 'cyclone',       name: '��������',   desc: '쫷��·�������е�������˺�',     element: 'hurricane', icon: '??' },
-  { id: 'multi_clear',   name: '��������',   desc: '����ʱ��������һ���ӵ�����',       element: 'neutral',   icon: '??' },
-  { id: 'energy_eff',    name: '��������',   desc: '�����������ļ��� 25%',            element: 'neutral',   icon: '??' },
-  { id: 'hp_regen',      name: '������Ȫ',   desc: 'ÿ����һ�лָ� 1 HP',             element: 'neutral',   icon: '??' },
-  { id: 'wave_slow',     name: 'ʱ��֮��',   desc: '���е����ٶȽ��� 15%',            element: 'neutral',   icon: '?' },
-  { id: 'crit_chance',   name: '��������',   desc: '������ +20%',                    element: 'neutral',   icon: '??' },
+  { id: 'dmg_up',        name: '\u706b\u529b\u5f3a\u5316',   desc: '\u5b50\u5f39\u4f24\u5bb3 +30%',                    element: 'neutral',   icon: '\ud83d\udca5' },
+  { id: 'fire_dmg',      name: '\u70c8\u5f70\u5347\u534e',   desc: '\u706b\u7130\u6280\u80fd\u4f24\u5bb3 x2',           element: 'fire',      icon: '\ud83d\udd25' },
+  { id: 'fire_zone_dot', name: '\u7126\u571f\u6218\u573a',   desc: '\u706b\u7130\u533a\u57df\u71c3\u70e7\u4f24\u5bb3 +50%', element: 'fire', icon: '\ud83c\udf0b' },
+  { id: 'lightning_dmg', name: '\u96f7\u9706\u4e07\u9f88',   desc: '\u95ea\u7535\u94fe\u51fb +2 \u76ee\u6807\uff0c\u4f24\u5bb3 x1.5', element: 'lightning', icon: '\u26a1' },
+  { id: 'chain_bolt',    name: '\u5206\u53c9\u95ea\u7535',   desc: '\u95ea\u7535\u5bf9\u6bcf\u4e2a\u76ee\u6807\u518d\u6b21\u5206\u53c9\u4f24\u5bb3', element: 'lightning', icon: '\ud83c\udf29\ufe0f' },
+  { id: 'frost_dur',     name: '\u6781\u5bd2\u6c38\u51bb',   desc: '\u51b0\u971c\u51bb\u7ed3\u65f6\u957f +3 \u79d2',    element: 'frost',     icon: '\u2744\ufe0f' },
+  { id: 'blizzard',      name: '\u66b4\u98ce\u96ea',         desc: '\u51b0\u971c\u540c\u65f6\u51cf\u901f\u672a\u51bb\u7ed3\u656c\u4eba 70%', element: 'frost', icon: '\ud83c\udf28\ufe0f' },
+  { id: 'hurricane_kb',  name: '\u5f3a\u529b\u98d9\u98ce',   desc: '\u98d9\u98ce +2 \u76ee\u6807\uff0c\u51fb\u9000\u8ddd\u79bb x1.5', element: 'hurricane', icon: '\ud83c\udf2a\ufe0f' },
+  { id: 'cyclone',       name: '\u9f99\u5377\u98ce\u773c',   desc: '\u98d9\u98ce\u5bf9\u8def\u5f84\u4e0a\u6240\u6709\u656c\u4eba\u9020\u6210\u4f24\u5bb3', element: 'hurricane', icon: '\ud83c\udf00' },
+  { id: 'multi_clear',   name: '\u8fde\u9501\u6d88\u9664',   desc: '\u6d88\u884c\u65f6\u89e6\u53d1\u989d\u5916\u4e00\u6b21\u5b50\u5f39\u9f50\u5c04', element: 'neutral', icon: '\ud83d\udcab' },
+  { id: 'energy_eff',    name: '\u80fd\u91cf\u5171\u9f23',   desc: '\u6280\u80fd\u80fd\u91cf\u6d88\u8017\u51cf\u5c11 25%', element: 'neutral', icon: '\ud83d\udd0b' },
+  { id: 'hp_regen',      name: '\u751f\u547d\u56de\u6cc9',   desc: '\u6bcf\u6d88\u9664\u4e00\u884c\u6062\u590d 1 HP',   element: 'neutral',   icon: '\ud83d\udc9a' },
+  { id: 'wave_slow',     name: '\u65f6\u95f4\u4e4b\u6d77',   desc: '\u6240\u6709\u656c\u4eba\u901f\u5ea6\u964d\u4f4e 15%', element: 'neutral', icon: '\u231b' },
+  { id: 'crit_chance',   name: '\u66b4\u51fb\u8fde\u53d1',   desc: '\u66b4\u51fb\u7387 +20%',                           element: 'neutral',   icon: '\ud83c\udfaf' },
 ];
 
 function pickSkillOptions(taken: PassiveSkillId[]): PassiveSkillDef[] {
